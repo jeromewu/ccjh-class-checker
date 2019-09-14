@@ -14,9 +14,6 @@ import tblParser from './utils/tbl-parser';
 const URL_ROOT = 'http://www2.ccjh.cyc.edu.tw/classtable/';
 const URL = 'http://www2.ccjh.cyc.edu.tw/classtable/down.asp';
 const URL_RAW = 'http://www2.ccjh.cyc.edu.tw/classtable/down.asp?sqlstr=102&type=teacher&class=week&weekno=3&selArrange=R&selWindow=Left&yt=108,1';
-const dayOne = moment('2019-08-25 00:00:00+0800');
-const now = moment()
-const defaultWeekno = Math.ceil(now.diff(dayOne, 'days') / 7) + '';
 const TBL_HEADER = ['', '一', '二', '三', '四', '五', '六'];
 const TBL_TITLE = ['早', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
 const HEIGHT = 48;
@@ -27,13 +24,15 @@ RCTNetworking.clearCookies(() => {});
 
 export default function App() {
   const [tbl, setTbl] = useState([]);
-  const [weekno, setWeekno] = useState(defaultWeekno);
+  const [weekno, setWeekno] = useState('1');
   const [isReady, setIsReady] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(moment());
   const [modal, setModal] = useState(false);
   const [teacherId, setTeacherId] = useState('102');
   const [updating, setUpdating] = useState(false);
+  const [dayOne, setDayOne] = useState('2019-08-25');
+  const [yt, setYt] = useState('108,1');
 
   useEffect(() => {
     (async () => {
@@ -48,12 +47,24 @@ export default function App() {
       if (id !== null) {
         setTeacherId(id);
       }
+      const dOne = await AsyncStorage.getItem('@CCJH:dayOne');
+      let d = moment(`${dayOne} 00:00:00+0800`);
+      if (dOne !== null) {
+        d = moment(`${dOne} 00:00:00+0800`);
+        setDayOne(dOne);
+      }
+      setWeekno(Math.ceil(now.diff(d, 'days') / 7) + '');
+      const yT = await AsyncStorage.getItem('@CCJH:yt');
+      if (yT !== null) {
+        setYt(yT);
+      }
     })();
+    console.log('test');
   }, []);
 
   useEffect(() => {
     refreshTbl();
-  }, [weekno, teacherId])
+  }, [weekno, teacherId, yt]);
 
   const refreshTbl = async () => {
     setUpdating(true);
@@ -65,7 +76,7 @@ export default function App() {
         weekno,
         selArrange: 'L',
         selWindow: 'Left',
-        yt: '108,1',
+        yt,
       }
     });
     setTbl(tblParser(data));
@@ -79,7 +90,7 @@ export default function App() {
       refreshTbl();
       setRefreshing(false);
     })();
-  }, [refreshing, weekno]);
+  }, [refreshing, weekno, teacherId, yt]);
 
   const updateWeekno = (step) => () => {
     const weeknoInt = parseInt(weekno);
@@ -131,12 +142,26 @@ export default function App() {
                   setTeacherId(text);
                 }}/>
               </Item>
+              <Item floatingLabel>
+                <Label>Semester</Label>
+                <Input value={yt} onChangeText={text => {
+                  setYt(text);
+                }}/>
+              </Item>
+              <Item floatingLabel>
+                <Label>First Day (Restart required)</Label>
+                <Input value={dayOne} onChangeText={text => {
+                  setDayOne(text);
+                }}/>
+              </Item>
             </Form>
             <CardItem footer style={styles.cardFooter}>
               <Button transparent onPress={() => {
-                setModal(false);
                 AsyncStorage.setItem('@CCJH:teacherId', teacherId);
+                AsyncStorage.setItem('@CCJH:dayOne', dayOne);
+                AsyncStorage.setItem('@CCJH:yt', yt);
                 refreshTbl();
+                setModal(false);
               }}>
                 <Text>Confirm</Text>
               </Button>
@@ -149,7 +174,7 @@ export default function App() {
       </View>
       <Header>
         <Body>
-          <Title>{updating ? 'Updating...' : `Updated at ${now.format('HH:mm:ss')}`}</Title>
+          <Title style={styles.title}>{updating ? 'Updating...' : `Updated@${now.format('HH:mm:ss')}`}</Title>
         </Body>
         <Right>
           <Button transparent onPress={updateWeekno(-1)}>
@@ -188,6 +213,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingTop: StatusBar.currentHeight,
+  },
+  title: {
+    fontSize: 14,
   },
   tbl: {
     margin: 8,

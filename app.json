@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "CCJH Class Checker",
-    "slug": "CCJHClassChecker",
+    "name": "JCSH Class Checker",
+    "slug": "JCSHClassChecker",
     "privacy": "public",
     "sdkVersion": "34.0.0",
     "platforms": [
