@@ -19,6 +19,9 @@ export default (data) => {
   const re =/<td class=\"tdColumn.*\">(.*)<\/td>/gm;
   const raw = data.match(re);
   const tbl = [];
+  if (raw === null) {
+    return [];
+  }
 
   for (let i=0; i < 10; i++) {
     tbl.push(parseRow(raw.slice(6*i, 6*(i+1))))

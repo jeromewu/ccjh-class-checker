@@ -33,17 +33,7 @@ export default function App() {
   const [now, setNow] = useState(moment());
   const [modal, setModal] = useState(false);
   const [teacherId, setTeacherId] = useState('102');
-  const getConfig = () => ({
-    params: {
-      sqlstr: teacherId,
-      type: 'teacher',
-      class: 'week',
-      weekno,
-      selArrange: 'L',
-      selWindow: 'Left',
-      yt: '108,1',
-    },
-  });
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -61,10 +51,26 @@ export default function App() {
     })();
   }, []);
 
+  useEffect(() => {
+    refreshTbl();
+  }, [weekno, teacherId])
+
   const refreshTbl = async () => {
-    const { data } = await axios.get(URL, getConfig());
+    setUpdating(true);
+    const { data } = await axios.get(URL, {
+      params: {
+        sqlstr: teacherId,
+        type: 'teacher',
+        class: 'week',
+        weekno,
+        selArrange: 'L',
+        selWindow: 'Left',
+        yt: '108,1',
+      }
+    });
     setTbl(tblParser(data));
     setNow(moment());
+    setUpdating(false);
   };
 
   const onRefresh = useCallback(() => {
@@ -73,7 +79,7 @@ export default function App() {
       refreshTbl();
       setRefreshing(false);
     })();
-  }, [refreshing]);
+  }, [refreshing, weekno]);
 
   const updateWeekno = (step) => () => {
     const weeknoInt = parseInt(weekno);
@@ -82,7 +88,6 @@ export default function App() {
     } else {
       setWeekno('1');
     }
-    refreshTbl();
   }
 
   const tblElm = tbl.map(row => (
@@ -144,7 +149,7 @@ export default function App() {
       </View>
       <Header>
         <Body>
-          <Title>{`Update at ${now.format('HH:mm:ss')}`}</Title>
+          <Title>{updating ? 'Updating...' : `Updated at ${now.format('HH:mm:ss')}`}</Title>
         </Body>
         <Right>
           <Button transparent onPress={updateWeekno(-1)}>
