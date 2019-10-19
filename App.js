@@ -59,7 +59,6 @@ export default function App() {
         setYt(yT);
       }
     })();
-    console.log('test');
   }, []);
 
   useEffect(() => {
@@ -102,14 +101,19 @@ export default function App() {
   }
 
   const tblElm = tbl.map(row => (
-    row.map((col) => {
+    row.map((col, idx) => {
+      const d = now.day();
+      const nowWeekno = Math.ceil(now.diff(dayOne, 'days') / 7);
+      const highlight = idx + 1 === d && nowWeekno === parseInt(weekno);
+      const cStyles = [styles.cell, highlight ? styles.cellInverted : undefined];
+      const ctStyles = [styles.cellText, highlight ? styles.cellTextInverted : undefined];
       if (col === null) {
-        return <View/>
+        return <View style={cStyles}/>
       } else {
         return (
-          <View style={styles.cell}>
-            <Text style={styles.cellText}>{col.name}</Text>
-            <Text style={styles.cellText}>{col.class}</Text>
+          <View style={cStyles}>
+            <Text style={ctStyles}>{col.name}</Text>
+            <Text style={ctStyles}>{col.class}</Text>
           </View>
         )
       }
@@ -246,6 +250,12 @@ const styles = StyleSheet.create({
   },
   cellText: {
     fontSize: 12,
+  },
+  cellInverted: {
+    backgroundColor: 'rgba(29,150,178,0.25)',
+  },
+  cellTextInverted: {
+    fontWeight: 'bold',
   },
   modal: {
     flex: 1,
