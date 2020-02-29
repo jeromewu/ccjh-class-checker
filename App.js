@@ -13,7 +13,7 @@ import tblParser from './utils/tbl-parser';
 
 const URL_ROOT = 'http://www2.ccjh.cyc.edu.tw/classtable/';
 const URL = 'http://www2.ccjh.cyc.edu.tw/classtable/down.asp';
-const URL_RAW = 'http://www2.ccjh.cyc.edu.tw/classtable/down.asp?sqlstr=102&type=teacher&class=week&weekno=3&selArrange=R&selWindow=Left&yt=108,1';
+const URL_RAW = 'http://www2.ccjh.cyc.edu.tw/classtable/down.asp?sqlstr=102&type=teacher&class=week&weekno=1&selArrange=R&selWindow=Left&yt=108,2';
 const TBL_HEADER = ['', '一', '二', '三', '四', '五', '六'];
 const TBL_TITLE = ['早', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
 const HEIGHT = 48;
@@ -31,8 +31,8 @@ export default function App() {
   const [modal, setModal] = useState(false);
   const [teacherId, setTeacherId] = useState('102');
   const [updating, setUpdating] = useState(false);
-  const [dayOne, setDayOne] = useState('2019-08-25');
-  const [yt, setYt] = useState('108,1');
+  const [dayOne, setDayOne] = useState('2020-02-23');
+  const [yt, setYt] = useState('108,2');
 
   useEffect(() => {
     (async () => {
