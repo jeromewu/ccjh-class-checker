@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { StatusBar, StyleSheet, Text, ScrollView, View, RefreshControl, Modal, AsyncStorage } from 'react-native';
 import RCTNetworking from 'RCTNetworking';
 import { WebView } from 'react-native-webview';
-import { AppLoading } from 'expo';
+import { AppLoading, Updates } from 'expo';
 import axios from 'axios';
 import moment from 'moment';
 import * as Font from 'expo-font';
@@ -118,7 +118,21 @@ export default function App() {
         )
       }
     })
-  ))
+  ));
+
+  const genTblHeader = () => {
+    const dayOfWeek = now.day(); // 0: Sun, 1: Mon, ...
+    const nowWeekno = Math.ceil(now.diff(dayOne, 'days') / 7);
+    const offsets = Array(7).fill(0).map((el, idx) => idx - dayOfWeek);
+    return TBL_HEADER.map((header, idx) => {
+      if(idx === 0) {
+        return header;
+      } else {
+        const d = moment(now).add(offsets[idx] + (weekno - nowWeekno) * 7, 'days');
+        return header + `\n(${d.month()+1}/${d.date()})`;
+      }
+    });
+  };
 
   if (!isReady) {
     return <AppLoading />;
@@ -141,19 +155,19 @@ export default function App() {
           <Card style={styles.card}>
             <Form style={styles.cardBody}>
               <Item floatingLabel>
-                <Label>Teacher ID</Label>
+                <Label>教師編號</Label>
                 <Input value={teacherId} onChangeText={text => {
                   setTeacherId(text);
                 }}/>
               </Item>
               <Item floatingLabel>
-                <Label>Semester</Label>
+                <Label>學期</Label>
                 <Input value={yt} onChangeText={text => {
                   setYt(text);
                 }}/>
               </Item>
               <Item floatingLabel>
-                <Label>First Day (Restart required)</Label>
+                <Label>學期第一天(需重開)</Label>
                 <Input value={dayOne} onChangeText={text => {
                   setDayOne(text);
                 }}/>
@@ -166,8 +180,9 @@ export default function App() {
                 AsyncStorage.setItem('@CCJH:yt', yt);
                 refreshTbl();
                 setModal(false);
+                Updates.reloadFromCache();
               }}>
-                <Text>Confirm</Text>
+                <Text>確定</Text>
               </Button>
             </CardItem>
           </Card>
@@ -178,14 +193,14 @@ export default function App() {
       </View>
       <Header>
         <Body>
-          <Title style={styles.title}>{updating ? 'Updating...' : `Updated@${now.format('HH:mm:ss')}`}</Title>
+          <Title style={styles.title}>{updating ? '更新中...' : `已更新@${now.format('HH:mm:ss')}`}</Title>
         </Body>
         <Right>
           <Button transparent onPress={updateWeekno(-1)}>
             <Icon name="arrow-back" />
           </Button>
           <Button transparent>
-            <Text style={styles.whiteText}>{weekno}</Text>
+            <Text style={styles.whiteText}>{`第${weekno}週`}</Text>
           </Button>
           <Button transparent onPress={updateWeekno(1)}>
             <Icon name="arrow-forward" />
@@ -201,7 +216,7 @@ export default function App() {
         }
       >
         <Table style={styles.tbl} borderStyle={{ borderWidth: 1, borderColor: '#1d96b2' }}>
-          <Row style={styles.tblHeader} textStyle={[styles.text, styles.whiteText]} data={TBL_HEADER} flexArr={headerFlexArr}/>
+          <Row style={styles.tblHeader} textStyle={[styles.text, styles.whiteText]} data={genTblHeader()} flexArr={headerFlexArr}/>
           <TableWrapper style={styles.wrapper}>
             <Col textStyle={styles.text} data={TBL_TITLE} heightArr={colFlexArr} />
             <Rows style={styles.row} data={tblElm} flexArr={Array(6).fill(0).map(() => 1)} />
