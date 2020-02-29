@@ -19,6 +19,7 @@ const TBL_TITLE = ['早', '一', '二', '三', '四', '五', '六', '七', '八'
 const HEIGHT = 48;
 const headerFlexArr = Array(7).fill(0).map(() => 1);
 const colFlexArr = Array(10).fill(0).map(() => HEIGHT);
+const DAY_ONE_OFFSET = 2; // Add a offset to day one to make it 2 days earlier to make sure the no. is right.
 
 RCTNetworking.clearCookies(() => {});
 
@@ -31,7 +32,7 @@ export default function App() {
   const [modal, setModal] = useState(false);
   const [teacherId, setTeacherId] = useState('102');
   const [updating, setUpdating] = useState(false);
-  const [dayOne, setDayOne] = useState('2020-02-22');
+  const [dayOne, setDayOne] = useState('2020-02-24');
   const [yt, setYt] = useState('108,2');
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function App() {
         d = moment(`${dOne} 00:00:00+0800`);
         setDayOne(dOne);
       }
-      setWeekno(Math.ceil(now.diff(d, 'days') / 7) + '');
+      setWeekno(Math.ceil((now.diff(d, 'days') + DAY_ONE_OFFSET) / 7) + '');
       const yT = await AsyncStorage.getItem('@CCJH:yt');
       if (yT !== null) {
         setYt(yT);
@@ -103,7 +104,7 @@ export default function App() {
   const tblElm = tbl.map(row => (
     row.map((col, idx) => {
       const d = now.day();
-      const nowWeekno = Math.ceil(now.diff(dayOne, 'days') / 7);
+      const nowWeekno = Math.ceil((now.diff(dayOne, 'days') + DAY_ONE_OFFSET) / 7);
       const highlight = idx + 1 === d && nowWeekno === parseInt(weekno);
       const cStyles = [styles.cell, highlight ? styles.cellInverted : undefined];
       const ctStyles = [styles.cellText, highlight ? styles.cellTextInverted : undefined];
@@ -122,7 +123,7 @@ export default function App() {
 
   const genTblHeader = () => {
     const dayOfWeek = now.day(); // 0: Sun, 1: Mon, ...
-    const nowWeekno = Math.ceil(now.diff(dayOne, 'days') / 7);
+    const nowWeekno = Math.ceil((now.diff(dayOne, 'days') + DAY_ONE_OFFSET) / 7);
     const offsets = Array(7).fill(0).map((el, idx) => idx - dayOfWeek);
     return TBL_HEADER.map((header, idx) => {
       if(idx === 0) {
@@ -167,7 +168,7 @@ export default function App() {
                 }}/>
               </Item>
               <Item floatingLabel>
-                <Label>學期第一天</Label>
+                <Label>學期第一週的週一</Label>
                 <Input value={dayOne} onChangeText={text => {
                   setDayOne(text);
                 }}/>
