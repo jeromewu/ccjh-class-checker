@@ -31,7 +31,7 @@ export default function App() {
   const [modal, setModal] = useState(false);
   const [teacherId, setTeacherId] = useState('102');
   const [updating, setUpdating] = useState(false);
-  const [dayOne, setDayOne] = useState('2020-02-23');
+  const [dayOne, setDayOne] = useState('2020-02-22');
   const [yt, setYt] = useState('108,2');
 
   useEffect(() => {
@@ -167,7 +167,7 @@ export default function App() {
                 }}/>
               </Item>
               <Item floatingLabel>
-                <Label>學期第一天(需重開)</Label>
+                <Label>學期第一天</Label>
                 <Input value={dayOne} onChangeText={text => {
                   setDayOne(text);
                 }}/>
