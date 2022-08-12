@@ -4,6 +4,10 @@
 
 - Node 16.16.0
 - yarn 1.22.19
+- Java 18
+- Android
+  - platforms;android-31
+  - build-tools;30.0.3
 
 ## Setup
 
