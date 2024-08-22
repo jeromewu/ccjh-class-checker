@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cellText: {
-    fontSize: 10,
+    fontSize: 8,
   },
   cellInverted: {
     backgroundColor: 'rgba(29,150,178,0.25)',
