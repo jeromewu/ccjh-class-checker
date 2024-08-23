@@ -5,10 +5,14 @@ const parseRow = cols => {
       row.push(null);
     } else {
       const nameRE = /<font .*><a .*>(.*)<\/a><\/font>/gm;
-      const classRE = /<br \/><a .*>(.*)<\/a><br \/>/gm;
+      const itemRE = /<br \/><a .*?>(.*?)<\/a>/gm;
+      const items = [nameRE.exec(col)[1]];
+      let result;
+      while ((result = itemRE.exec(col)) !== null) {
+        items.push(result[1]);
+      }
       row.push({
-        name: nameRE.exec(col)[1],
-        class: classRE.exec(col)[1],
+        items,
       });
     }
   });
@@ -16,7 +20,7 @@ const parseRow = cols => {
 };
 
 export const tblParser = data => {
-  const re = /<td class=\"tdColumn.*\">(.*)<\/td>/gm;
+  const re = /<td class="tdColumn.*">(.*)<\/td>/gm;
   const raw = data.match(re);
   const tbl = [];
   if (raw === null) {

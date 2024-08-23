@@ -68,8 +68,8 @@ const App: () => Node = () => {
   const [modal, setModal] = useState(false);
   const [teacherId, setTeacherId] = useState('102');
   const [updating, setUpdating] = useState(false);
-  const [dayOne, setDayOne] = useState('2022-07-25');
-  const [yt, setYt] = useState('111,4');
+  const [dayOne, setDayOne] = useState('2024-07-01');
+  const [yt, setYt] = useState('113,4');
 
   useEffect(() => {
     (async () => {
@@ -148,7 +148,6 @@ const App: () => Node = () => {
       ];
       const ctStyles = [
         styles.cellText,
-        styles.blackText,
         highlight ? styles.cellTextInverted : undefined,
       ];
       if (col === null) {
@@ -156,8 +155,16 @@ const App: () => Node = () => {
       } else {
         return (
           <View style={cStyles}>
-            <Text style={ctStyles}>{col.name}</Text>
-            <Text style={ctStyles}>{col.class}</Text>
+            {col.items.map((item, i) => (
+              <Text
+                style={[
+                  ...ctStyles,
+                  i === 0 ? styles.redText : styles.blueText,
+                ]}
+                key={i}>
+                {item}
+              </Text>
+            ))}
           </View>
         );
       }
@@ -353,6 +360,15 @@ const styles = StyleSheet.create({
   },
   blackText: {
     color: 'black',
+  },
+  redText: {
+    color: 'red',
+  },
+  greenText: {
+    color: 'green',
+  },
+  blueText: {
+    color: 'blue',
   },
   wrapper: {
     flexDirection: 'row',
