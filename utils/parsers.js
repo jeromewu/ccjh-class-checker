@@ -6,10 +6,10 @@ const parseRow = cols => {
     } else {
       const nameRE = /<font .*><a .*>(.*)<\/a><\/font>/gm;
       const itemRE = /<br \/><a .*?>(.*?)<\/a>/gm;
-      const items = [nameRE.exec(col)[1]];
+      const items = [nameRE.exec(col)[1].substring(0, 10)];
       let result;
       while ((result = itemRE.exec(col)) !== null) {
-        items.push(result[1]);
+        items.push(result[1].substring(0, 5));
       }
       row.push({
         items,
