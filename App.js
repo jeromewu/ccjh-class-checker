@@ -68,8 +68,8 @@ const App: () => Node = () => {
   const [modal, setModal] = useState(false);
   const [teacherId, setTeacherId] = useState('102');
   const [updating, setUpdating] = useState(false);
-  const [dayOne, setDayOne] = useState('2024-07-01');
-  const [yt, setYt] = useState('113,4');
+  const [dayOne, setDayOne] = useState('2025-08-31');
+  const [yt, setYt] = useState('114,1');
 
   useEffect(() => {
     (async () => {
