@@ -40,6 +40,7 @@ import moment from 'moment';
 import {WebView} from 'react-native-webview';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import RNRestart from 'react-native-restart';
 import {titleParser, tblParser} from './utils/parsers';
 
 const URL_ROOT = 'http://www2.ccjh.cyc.edu.tw/classtable/';
@@ -260,6 +261,21 @@ const App: () => Node = () => {
           <HStack alignItems="center">
             <Text style={styles.whiteText}>{title}</Text>
           </HStack>
+          <HStack alignItems="center">
+            <IconButton
+              icon={
+                <Icon
+                  as={MaterialIcons}
+                  name="refresh"
+                  color="white"
+                  size={6}
+                />
+              }
+              onPress={() => {
+                RNRestart.Restart();
+              }}
+            />
+          </HStack>
         </HStack>
         <ScrollView
           refreshControl={
@@ -349,7 +365,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   tbl: {
-    margin: 8,
+    margin: 4,
     width: StatusBar.width,
   },
   text: {
