@@ -56,9 +56,10 @@ const headerFlexArr = Array(7)
 const colFlexArr = Array(10)
   .fill(0)
   .map(() => HEIGHT);
-const DAY_ONE_OFFSET = 2; // Add a offset to day one to make it 2 days earlier to make sure the no. is right.
 const stackColor = '#2196f3';
 const borderStyle = {borderWidth: 1, borderColor: '#1d96b2'};
+// Add 8 hours to time string to make it UTC+8 (Asia/Taipei)
+const toMoment = str => moment(str, 'YYYY-MM-DD').add(8, 'hours');
 
 const App: () => Node = () => {
   const [tbl, setTbl] = useState([]);
@@ -69,8 +70,12 @@ const App: () => Node = () => {
   const [modal, setModal] = useState(false);
   const [teacherId, setTeacherId] = useState('102');
   const [updating, setUpdating] = useState(false);
-  const [dayOne, setDayOne] = useState('2025-08-31');
-  const [yt, setYt] = useState('114,1');
+  // init week is a hack to fix the case when
+  // there is a gap week between weeks.
+  const [initWeek, setInitWeek] = useState('3');
+  // monday of initial week
+  const [dayOne, setDayOne] = useState('2026-02-23');
+  const [yt, setYt] = useState('114,2');
 
   useEffect(() => {
     (async () => {
@@ -78,17 +83,28 @@ const App: () => Node = () => {
       if (id !== null) {
         setTeacherId(id);
       }
-      const dOne = await AsyncStorage.getItem('@CCJH:dayOne');
-      let d = moment(`${dayOne} 00:00:00+0800`);
-      if (dOne !== null) {
-        d = moment(`${dOne} 00:00:00+0800`);
-        setDayOne(dOne);
+      let week = await AsyncStorage.getItem('@CCJH:initWeek');
+      if (week !== null) {
+        setInitWeek(week);
+      } else {
+        week = initWeek;
       }
-      setWeekno(Math.ceil((now.diff(d, 'days') + DAY_ONE_OFFSET) / 7) + '');
+      let d1 = await AsyncStorage.getItem('@CCJH:dayOne');
+      if (d1 !== null) {
+        setDayOne(d1);
+      } else {
+        d1 = dayOne;
+      }
       const yT = await AsyncStorage.getItem('@CCJH:yt');
       if (yT !== null) {
         setYt(yT);
       }
+
+      setWeekno(now.isBefore(toMoment(d1))
+      // Earlier than day one, set week no to init week.
+        ? week
+        : (parseInt(week) + Math.floor(now.diff(toMoment(d1), 'days') / 7)) + ''
+      );
     })();
   }, []);
 
@@ -106,10 +122,10 @@ const App: () => Node = () => {
 
   const updateWeekno = step => () => {
     const weeknoInt = parseInt(weekno);
-    if (weeknoInt + step > 0) {
+    if (weeknoInt + step > parseInt(initWeek)) {
       setWeekno(weeknoInt + step + '');
     } else {
-      setWeekno('1');
+      setWeekno(initWeek);
     }
   };
 
@@ -139,10 +155,9 @@ const App: () => Node = () => {
   const tblElm = tbl.map(row =>
     row.map((col, idx) => {
       const d = now.day();
-      const nowWeekno = Math.ceil(
-        (now.diff(dayOne, 'days') + DAY_ONE_OFFSET) / 7,
-      );
-      const highlight = idx + 1 === d && nowWeekno === parseInt(weekno);
+      const d1 = toMoment(dayOne);
+      const nowWeekno = parseInt(initWeek) + (now.isAfter(d1) ? Math.floor(now.diff(d1, 'days') / 7) : 0);
+      const highlight = idx + 1 === d && nowWeekno === parseInt(weekno) && now.isAfter(d1);
       const cStyles = [
         styles.cell,
         highlight ? styles.cellInverted : undefined,
@@ -174,20 +189,21 @@ const App: () => Node = () => {
 
   const genTblHeader = () => {
     const dayOfWeek = now.day(); // 0: Sun, 1: Mon, ...
-    const nowWeekno = Math.ceil(
-      (now.diff(dayOne, 'days') + DAY_ONE_OFFSET) / 7,
-    );
+
+    const d1 = toMoment(dayOne);
+    const nowWeekno = parseInt(initWeek) + (now.isAfter(d1) ? Math.floor(now.diff(toMoment(dayOne), 'days') / 7) : 0);
+
     const offsets = Array(7)
       .fill(0)
       .map((el, idx) => idx - dayOfWeek);
+
+    const n = now.isBefore(d1) ? d1.add(dayOfWeek - 1, 'days') : now;
+
     return TBL_HEADER.map((header, idx) => {
       if (idx === 0) {
         return header;
       } else {
-        const d = moment(now).add(
-          offsets[idx] + (weekno - nowWeekno) * 7,
-          'days',
-        );
+        const d = moment(n).add(offsets[idx] + (weekno - nowWeekno) * 7, 'days');
         return header + `\n${d.month() + 1}/${d.date()}`;
       }
     });
@@ -225,13 +241,23 @@ const App: () => Node = () => {
                   />
                 </Stack>
                 <Stack floatingLabel>
-                  <FormControl.Label>學期第一週的週一</FormControl.Label>
-                  <Input
-                    value={dayOne}
-                    onChangeText={text => {
-                      setDayOne(text);
-                    }}
-                  />
+                  <FormControl.Label>初始週次及其週一日期</FormControl.Label>
+                  <HStack>
+                    <Input
+                      w="30%"
+                      value={initWeek}
+                      onChangeText={text => {
+                        setInitWeek(text);
+                      }}
+                    />
+                    <Input
+                      w="70%"
+                      value={dayOne}
+                      onChangeText={text => {
+                        setDayOne(text);
+                      }}
+                    />
+                  </HStack>
                 </Stack>
               </FormControl>
             </Modal.Body>
@@ -240,8 +266,14 @@ const App: () => Node = () => {
                 <Button
                   onPress={() => {
                     AsyncStorage.setItem('@CCJH:teacherId', teacherId);
+                    AsyncStorage.setItem('@CCJH:initWeek', initWeek);
                     AsyncStorage.setItem('@CCJH:dayOne', dayOne);
                     AsyncStorage.setItem('@CCJH:yt', yt);
+                    setWeekno(now.isBefore(toMoment(dayOne))
+                      // Earlier than day one, set week no to init week.
+                      ? initWeek
+                      : (parseInt(initWeek) + Math.floor(now.diff(toMoment(dayOne), 'days') / 7)) + ''
+                    );
                     refreshTbl();
                     setModal(false);
                   }}>
