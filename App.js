@@ -58,8 +58,7 @@ const colFlexArr = Array(10)
   .map(() => HEIGHT);
 const stackColor = '#2196f3';
 const borderStyle = {borderWidth: 1, borderColor: '#1d96b2'};
-// Add 8 hours to time string to make it UTC+8 (Asia/Taipei)
-const toMoment = str => moment(str, 'YYYY-MM-DD').add(8, 'hours');
+const toMoment = str => moment(str, 'YYYY-MM-DD');
 
 const App: () => Node = () => {
   const [tbl, setTbl] = useState([]);
@@ -188,24 +187,16 @@ const App: () => Node = () => {
   );
 
   const genTblHeader = () => {
-    const dayOfWeek = now.day(); // 0: Sun, 1: Mon, ...
-
-    const d1 = toMoment(dayOne);
-    const nowWeekno = parseInt(initWeek) + (now.isAfter(d1) ? Math.floor(now.diff(toMoment(dayOne), 'days') / 7) : 0);
-
-    const offsets = Array(7)
-      .fill(0)
-      .map((el, idx) => idx - dayOfWeek);
-
-    const n = now.isBefore(d1) ? d1.add(dayOfWeek - 1, 'days') : now;
-
+    const monday = toMoment(dayOne).add(
+      (parseInt(weekno) - parseInt(initWeek)) * 7,
+      'days',
+    );
     return TBL_HEADER.map((header, idx) => {
       if (idx === 0) {
         return header;
-      } else {
-        const d = moment(n).add(offsets[idx] + (weekno - nowWeekno) * 7, 'days');
-        return header + `\n${d.month() + 1}/${d.date()}`;
       }
+      const d = moment(monday).add(idx - 1, 'days');
+      return header + `\n${d.month() + 1}/${d.date()}`;
     });
   };
 
