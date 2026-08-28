@@ -41,12 +41,47 @@ import {WebView} from 'react-native-webview';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNRestart from 'react-native-restart';
-import {titleParser, tblParser} from './utils/parsers';
+import {titleParser, tblParser, headerParser} from './utils/parsers';
 
-const URL_ROOT = 'http://www2.ccjh.cyc.edu.tw/classtable/';
-const URL = 'http://www2.ccjh.cyc.edu.tw/classtable/down.asp';
-// const URL_RAW =
-//   "http://www2.ccjh.cyc.edu.tw/classtable/down.asp?sqlstr=102&type=teacher&class=week&weekno=1&selArrange=R&selWindow=Left&yt=110,2";
+const API_URL =
+  'https://cloud2.shin-her.com.tw/ClassTableV2/ClassTableForTest/GetTimetable';
+const SC = '5452f57dcf6af8f84640180466f83e05';
+const PAGE_URL = `https://cloud2.shin-her.com.tw/ClassTableV2/ClassTable?sc=${SC}`;
+// Every request field that never varies, including the Chinese-keyed display
+// options the endpoint expects verbatim. refreshTbl adds only Year, Term,
+// WeekNo, TeacherNo and the token on top.
+const STATIC_FIELDS = {
+  SchoolCode: '104319',
+  ClassNo: '',
+  ClassroomNo: '',
+  CrossName: '',
+  SubjectNo: '',
+  ShowWindow: 'left',
+  TimetableType: 'Teacher',
+  IsReverse: 'false',
+  教師超鐘點顯示: '隱藏',
+  教師姓名: '正常顯示',
+  學生能檢視的課程: '學生能檢視整天的課程',
+  檢視權限設定: '學生能檢視整天的課程',
+  是否顯示午休: '顯示',
+  是否顯示早自習: '顯示',
+  是否顯示節次時間: '顯示',
+  顯示科目名稱: '全名',
+  是否顯示總時數: '否',
+  是否顯示實施日期: '否',
+  實施開始日期: '',
+  實施結束日期: '',
+};
+// Injected into the ClassTable page to hand the anti-forgery token back to RN.
+const TOKEN_JS = `(function () {
+  try {
+    var el = document.querySelector('input[name=__RequestVerificationToken]');
+    if (el && el.value) {
+      window.ReactNativeWebView.postMessage(el.value);
+    }
+  } catch (e) {}
+  true;
+})();`;
 const TBL_HEADER = ['', '一', '二', '三', '四', '五', '六'];
 const TBL_TITLE = ['早', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
 const HEIGHT = 48;
@@ -59,9 +94,19 @@ const colFlexArr = Array(10)
 const stackColor = '#2196f3';
 const borderStyle = {borderWidth: 1, borderColor: '#1d96b2'};
 const toMoment = str => moment(str, 'YYYY-MM-DD');
+// Hand-rolled because axios 0.27 does not recognise React Native's
+// URLSearchParams polyfill as a form body (no Symbol.toStringTag) and would
+// JSON-encode it instead.
+const encodeForm = obj =>
+  Object.keys(obj)
+    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(obj[k])}`)
+    .join('&');
 
 const App: () => Node = () => {
   const [tbl, setTbl] = useState([]);
+  // { [weekDay]: 'YYYY-MM-DD' } for the currently shown week.
+  const [header, setHeader] = useState({});
+  const [token, setToken] = useState('');
   const [title, setTitle] = useState('');
   const [weekno, setWeekno] = useState('1');
   const [refreshing, setRefreshing] = useState(false);
@@ -71,10 +116,11 @@ const App: () => Node = () => {
   const [updating, setUpdating] = useState(false);
   // init week is a hack to fix the case when
   // there is a gap week between weeks.
-  const [initWeek, setInitWeek] = useState('3');
+  const [initWeek, setInitWeek] = useState('1');
   // monday of initial week
-  const [dayOne, setDayOne] = useState('2026-02-23');
-  const [yt, setYt] = useState('114,2');
+  const [dayOne, setDayOne] = useState('2026-08-31');
+  // "Year,Term" for the new API, e.g. "115,1".
+  const [yt, setYt] = useState('115,1');
 
   useEffect(() => {
     (async () => {
@@ -113,11 +159,11 @@ const App: () => Node = () => {
       refreshTbl();
       setRefreshing(false);
     })();
-  }, [refreshing, weekno, teacherId, yt]);
+  }, [refreshing, weekno, teacherId, yt, token]);
 
   useEffect(() => {
     refreshTbl();
-  }, [weekno, teacherId, yt]);
+  }, [weekno, teacherId, yt, token]);
 
   const updateWeekno = step => () => {
     const weeknoInt = parseInt(weekno);
@@ -129,21 +175,31 @@ const App: () => Node = () => {
   };
 
   const refreshTbl = async () => {
+    // Wait for the anti-forgery token scraped from the ClassTable page.
+    if (!token) {
+      return;
+    }
     setUpdating(true);
     try {
-      const {data} = await axios.get(URL, {
-        params: {
-          sqlstr: teacherId,
-          type: 'teacher',
-          class: 'week',
-          weekno,
-          selArrange: 'L',
-          selWindow: 'Left',
-          yt,
+      const [year, term] = yt.split(',');
+      const body = encodeForm({
+        ...STATIC_FIELDS,
+        Year: (year || '').trim(),
+        Term: (term || '').trim(),
+        WeekNo: weekno,
+        TeacherNo: teacherId,
+        __RequestVerificationToken: token,
+      });
+      const {data} = await axios.post(API_URL, body, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest',
+          Referer: PAGE_URL,
         },
       });
       setTitle(titleParser(data));
       setTbl(tblParser(data));
+      setHeader(headerParser(data));
     } catch (err) {
       // ignore errors.
     }
@@ -151,12 +207,11 @@ const App: () => Node = () => {
     setUpdating(false);
   };
 
+  const today = now.format('YYYY-MM-DD');
   const tblElm = tbl.map(row =>
     row.map((col, idx) => {
-      const d = now.day();
-      const d1 = toMoment(dayOne);
-      const nowWeekno = parseInt(initWeek) + (now.isAfter(d1) ? Math.floor(now.diff(d1, 'days') / 7) : 0);
-      const highlight = idx + 1 === d && nowWeekno === parseInt(weekno) && now.isAfter(d1);
+      // Highlight the column whose server-provided date is today.
+      const highlight = header[idx + 1] === today;
       const cStyles = [
         styles.cell,
         highlight ? styles.cellInverted : undefined,
@@ -186,25 +241,26 @@ const App: () => Node = () => {
     }),
   );
 
-  const genTblHeader = () => {
-    const monday = toMoment(dayOne).add(
-      (parseInt(weekno) - parseInt(initWeek)) * 7,
-      'days',
-    );
-    return TBL_HEADER.map((header, idx) => {
-      if (idx === 0) {
-        return header;
+  const genTblHeader = () =>
+    TBL_HEADER.map((label, idx) => {
+      const iso = header[idx];
+      if (idx === 0 || !iso) {
+        return label;
       }
-      const d = moment(monday).add(idx - 1, 'days');
-      return header + `\n${d.month() + 1}/${d.date()}`;
+      return `${label}\n${+iso.slice(5, 7)}/${+iso.slice(8, 10)}`;
     });
-  };
 
   return (
     <NativeBaseProvider>
       <Box flex="1" safeAreaTop bg="white">
         <View style={styles.webview}>
-          <WebView source={{uri: URL_ROOT}} onLoadEnd={refreshTbl} />
+          <WebView
+            source={{uri: PAGE_URL}}
+            sharedCookiesEnabled
+            thirdPartyCookiesEnabled
+            injectedJavaScript={TOKEN_JS}
+            onMessage={e => setToken(e.nativeEvent.data)}
+          />
         </View>
         <Modal
           animationPreset="fade"
@@ -223,7 +279,7 @@ const App: () => Node = () => {
                   />
                 </Stack>
                 <Stack floatingLabel>
-                  <FormControl.Label>學期</FormControl.Label>
+                  <FormControl.Label>學年,學期</FormControl.Label>
                   <Input
                     value={yt}
                     onChangeText={text => {

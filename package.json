@@ -37,6 +37,12 @@
     "react-test-renderer": "18.0.0"
   },
   "jest": {
-    "preset": "react-native"
+    "preset": "react-native",
+    "setupFiles": [
+      "<rootDir>/jest.setup.js"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?|react-native-table-component|native-base|react-native-vector-icons|react-native-webview|react-native-restart|react-native-safe-area-context|@react-native-async-storage)/)"
+    ]
   }
 }
