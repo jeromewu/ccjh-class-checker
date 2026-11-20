@@ -44,7 +44,7 @@ import RNRestart from 'react-native-restart';
 import {titleParser, tblParser, headerParser} from './utils/parsers';
 
 const API_URL =
-  'https://cloud2.shin-her.com.tw/ClassTableV2/ClassTableForTest/GetTimetable';
+  'https://cloud2.shin-her.com.tw/ClassTableV2/ClassTableQuery/GetTimetable';
 const SC = '5452f57dcf6af8f84640180466f83e05';
 const PAGE_URL = `https://cloud2.shin-her.com.tw/ClassTableV2/ClassTable?sc=${SC}`;
 // Every request field that never varies, including the Chinese-keyed display

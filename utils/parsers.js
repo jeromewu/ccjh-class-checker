@@ -1,5 +1,5 @@
 // Parsers for the shin-her cloud2 ClassTable API
-// (POST /ClassTableV2/ClassTableForTest/GetTimetable), which returns JSON.
+// (POST /ClassTableV2/ClassTableQuery/GetTimetable), which returns JSON.
 
 const toObj = data =>
   typeof data === 'string' ? JSON.parse(data) : data || {};
