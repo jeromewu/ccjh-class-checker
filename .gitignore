@@ -61,3 +61,6 @@ buck-out/
 # Ruby / CocoaPods
 /ios/Pods/
 /vendor/bundle/
+
+# HTTP archives (may contain session tokens)
+*.har
